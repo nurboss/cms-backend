@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model ContentType {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  schema      Json      // JSON schema for this content type
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  documents   Document[]
+  
+  @@map("content_types")
+}
+
+model SliceDefinition {
+  id          String    @id @default(cuid())
+  sliceType   String    @unique @map("slice_type") // e.g., "hero", "gallery"
+  name        String
+  description String?
+  schema      Json      // Primary fields schema
+  itemsSchema Json?     // Repeatable items schema (optional)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("slice_definitions")
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  uid         String    @unique // slug
+  title       String
+  contentType String    @map("content_type")
+  data        Json      // Slice zone data
+  status      String    @default("draft") // draft, published
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  contentTypeRef ContentType? @relation(fields: [contentType], references: [name], onDelete: Cascade)
+  
+  @@map("documents")
+  @@index([contentType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  filename    String
+  mimeType    String    @map("mime_type")
+  url         String
+  size        Int
+  width       Int?
+  height      Int?
+  altText     String?   @map("alt_text")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("assets")
+  @@index([createdAt])
+}
+
+model Settings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+}
